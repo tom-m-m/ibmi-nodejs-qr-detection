@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('./partials/head'); %>
+    <link rel="stylesheet" href="css/index.css">
+</head>
+<body class="container">
+
+<header>
+    <%- include('./partials/header'); %>
+</header>
+
+<main>
+    <div id="outputs">
+      <div id="outputMessage">QRコードが検出されました。</div>
+      <div><b>登録番号:</b> <span id="outputData"><%= qrid %></span></div>
+      <div><%= name %> 様、データベースに登録されています。</span></div>
+      <div>お手続きを進めますか？</span></div>
+    </div>
+  
+    <div id="outputs_b">
+        <button id="choiceButton" type="button" class="btn btn-primary" onclick="yes()">はい</button>
+        <button id="choiceButton" type="button" class="btn btn-secondary" onclick="no()">いいえ</button>
+    </div>
+
+</main>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
+<script type="text/javascript">
+var choiceMessage = document.getElementById("choiceMessage");
+var choiceButton = document.getElementById("choiceButton");
+
+var qrid = JSON.parse("<%= qrid %>".replace(/&#34;/g,'"'));
+var name = JSON.parse("<%= name %>".replace(/&#34;/g,'"'));
+var status = JSON.parse("<%= status %>".replace(/&#34;/g,'"'));
+var qr_flag = JSON.parse("<%= flag %>".replace(/&#34;/g,'"'));
+
+function yes() {
+  post("/submit", {id:qrid});
+}
+
+function no() {
+  get("/", {id:null});
+}
+
+function post(path, params, method='post') {
+  const form = document.createElement('form');
+  form.method = method;
+  form.action = path;
+
+  for (const key in params) {
+    if (params.hasOwnProperty(key)) {
+      const hiddenField = document.createElement('input');
+      hiddenField.type = 'hidden';
+      hiddenField.name = key;
+      hiddenField.value = params[key];
+
+      form.appendChild(hiddenField);
+    }
+  }
+
+  document.body.appendChild(form);
+  form.submit();
+}
+
+function get(path, params, method='get') {
+  const form = document.createElement('form');
+  form.method = method;
+  form.action = path;
+
+  for (const key in params) {
+    if (params.hasOwnProperty(key)) {
+      const hiddenField = document.createElement('input');
+      hiddenField.type = 'hidden';
+      hiddenField.name = key;
+      hiddenField.value = params[key];
+
+      form.appendChild(hiddenField);
+    }
+  }
+
+  document.body.appendChild(form);
+  form.submit();
+}
+</script>
+
+
+</body>
+</html>

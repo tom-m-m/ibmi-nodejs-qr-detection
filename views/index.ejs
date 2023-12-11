@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="jp">
+<head>
+    <%- include('./partials/head'); %>
+    <link rel="stylesheet" href="css/index.css">
+</head>
+<body class="container">
+
+<header>
+    <%- include('./partials/header'); %>
+</header>
+
+<main>
+    <div id="loadingMessage"> カメラが有効になっていません</div>
+    <canvas id="canvas" hidden></canvas>
+    <div id="outputs" hidden>
+      <div id="outputMessage">QRコード検出なし</div>
+      <div hidden><b>登録番号:</b> <span id="outputData"></span></div>
+      <div hidden><b></b> <span id="result"></span></div>
+    </div>
+  
+    <div id="outputs" hidden>
+        <button type="button" class="btn btn-primary" onclick="yes()">Yes</button>
+        <button type="button" class="btn btn-secondary" onclick="no()">No</button>
+    </div>
+
+</main>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
+<script type="text/javascript">
+var video = document.createElement("video");
+var canvasElement = document.getElementById("canvas");
+var canvas = canvasElement.getContext("2d");
+var loadingMessage = document.getElementById("loadingMessage");
+var outputContainer = document.getElementById("outputs");
+var outputMessage = document.getElementById("outputMessage");
+var outputData = document.getElementById("outputData");
+var result = document.getElementById("result");
+var requestID;
+
+function drawLine(begin, end, color) {
+  canvas.beginPath();
+  canvas.moveTo(begin.x, begin.y);
+  canvas.lineTo(end.x, end.y);
+  canvas.lineWidth = 4;
+  canvas.strokeStyle = color;
+  canvas.stroke();
+}
+
+// Use facingMode: environment to attemt to get the front camera on phones
+navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(function(stream) {
+  video.srcObject = stream;
+  video.setAttribute("playsinline", true); // required to tell iOS safari we don't want fullscreen
+  video.play();
+  requestAnimationFrame(tick);
+});
+
+
+var qr_flag = JSON.parse("<%= flag %>".replace(/&#34;/g,'"'));
+var update_flag = JSON.parse("<%= update_flag %>".replace(/&#34;/g,'"'));
+
+if (update_flag == 1){
+  outputMessage.innerText = '入室処理が完了しました。';
+} else if (update_flag == 2){
+  outputMessage.innerText = '退室処理が完了しました。';
+} else if (update_flag == 3) {
+  outputMessage.innerText = 'すでに処理が完了しているため、変更されませんでした。';
+}
+
+function tick() {
+  loadingMessage.innerText = "Loading video..."
+  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    loadingMessage.hidden = true;
+    canvasElement.hidden = false;
+    outputContainer.hidden = false;
+
+    canvasElement.height = video.videoHeight;
+    canvasElement.width = video.videoWidth;
+    canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+    var imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+    var code = jsQR(imageData.data, imageData.width, imageData.height, {
+      inversionAttempts: "dontInvert",
+    });
+
+      if (code) {
+        drawLine(code.location.topLeftCorner, code.location.topRightCorner, "#FF3B58");
+        drawLine(code.location.topRightCorner, code.location.bottomRightCorner, "#FF3B58");
+        drawLine(code.location.bottomRightCorner, code.location.bottomLeftCorner, "#FF3B58");
+        drawLine(code.location.bottomLeftCorner, code.location.topLeftCorner, "#FF3B58");
+        outputMessage.hidden = true;
+        outputData.parentElement.hidden = false;
+        outputData.innerText = code.data;
+
+        if (code.data) {
+          post("/qrid", {id:code.data});
+          sleep(300);
+        } else {
+          result.parentElement.hidden = false;
+        }
+
+      } else {
+        outputMessage.hidden = false;
+        outputData.parentElement.hidden = true;
+        result.parentElement.hidden = true;
+      }
+    }
+    requstID = requestAnimationFrame(tick);
+}
+
+function post(path, params, method='post') {
+  const form = document.createElement('form');
+  form.method = method;
+  form.action = path;
+
+  for (const key in params) {
+    if (params.hasOwnProperty(key)) {
+      const hiddenField = document.createElement('input');
+      hiddenField.type = 'hidden';
+      hiddenField.name = key;
+      hiddenField.value = params[key];
+
+      form.appendChild(hiddenField);
+    }
+  }
+
+  document.body.appendChild(form);
+  form.submit();
+}
+
+function sleep(waitMsec) {
+  var startMsec = new Date();
+
+  while (new Date() - startMsec < waitMsec);
+}
+</script>
+
+
+</body>
+</html>
