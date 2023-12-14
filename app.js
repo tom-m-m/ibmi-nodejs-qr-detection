@@ -7,9 +7,6 @@ const {dbconn, dbstmt} = require('idb-connector');
 const app = express();
 
 // https接続用の設定
-var ssl_server_key = './key/server_key.pem';
-var ssl_server_crt = './key/server_crt.pem';
-
 const server = require('https').createServer(
   {
     key: fs.readFileSync('./key/server_key.pem'),
@@ -28,11 +25,6 @@ app.set('view engine', 'ejs');
 
 const hostname = 'ibmi75';
 const port = 9443;
-
-var options = {
-        key: fs.readFileSync(ssl_server_key),
-        cert: fs.readFileSync(ssl_server_crt)
-};
 
 app.get('/', (req, res) => {
   res.render('index.ejs', {update_flag : 0, flag : 0});
