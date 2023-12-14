@@ -1,6 +1,5 @@
 const https = require('https');
 const fs = require('fs');
-const url = require('url');
 const bodyParser = require('body-parser');
 const express = require('express');
 const {dbconn, dbstmt} = require('idb-connector');
@@ -18,8 +17,6 @@ const server = require('https').createServer(
   },
   app
 );
-var data = {};
-data.resultMessage = '';
 
 app.use(express.static('views'));
 app.use(bodyParser.urlencoded({
